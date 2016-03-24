@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<project name="dorkandoom" default="start">
+    <target name="clean">
+        <delete dir="build"/>
+    </target>
+    <target name="compile">
+        <mkdir dir="build/classes"/>
+        <javac srcdir="src" destdir="build/classes"/>
+    </target>
+    <target name="jar">
+        <mkdir dir="build/jar"/>
+        <jar destfile="build/jar/dorkandoom.jar" basedir="build/classes">
+            <manifest>
+                <attribute name="Main-Class" value="de.mooxmirror.dorkandoom.main.GameLauncher"/>
+            </manifest>
+            <fileset dir=".">
+                <include name="**/res/**"/>
+            </fileset>
+        </jar>
+    </target>
+    <target name="run">
+        <java jar="build/jar/dorkandoom.jar" fork="true"/>
+    </target>
+    <target name="start">
+        <antcall target="clean" />
+        <antcall target="compile" />
+        <antcall target="jar" />
+        <antcall target="run" />
+    </target>
+</project>
