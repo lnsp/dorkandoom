@@ -11,17 +11,22 @@ import java.awt.Point;
  * @version 1.0
  */
 public abstract class Entity {
-	private final int MAX_HITPOINTS, VERTICAL_SPEED, HORIZONTAL_SPEED;
+	private final int MAX_HITPOINTS;
+	private final float VERTICAL_SPEED;
+	private final float HORIZONTAL_SPEED;
 	private final boolean HAS_HITBOX;
+	private int mWidth, mHeight;
 	private int mHitpoints;
-	private double mX, mY;
+	private float mX, mY;
 
-	protected Entity(int maxHitpoints, boolean hasHitbox, int verticalSpeed, int horizontalSpeed) {
+	protected Entity(int maxHitpoints, boolean hasHitbox, float hSpeed, float vSpeed, int width, int height) {
 		MAX_HITPOINTS = maxHitpoints;
-		VERTICAL_SPEED = verticalSpeed;
-		HORIZONTAL_SPEED = horizontalSpeed;
+		VERTICAL_SPEED = vSpeed;
+		HORIZONTAL_SPEED = hSpeed;
 		HAS_HITBOX = hasHitbox;
 		mHitpoints = maxHitpoints;
+		mWidth = width;
+		mHeight = height;
 	}
 
 	/**
@@ -61,7 +66,7 @@ public abstract class Entity {
 	 * 
 	 * @return Vertical movement speed.
 	 */
-	public int getVerticalSpeed() {
+	public float getVerticalSpeed() {
 		return VERTICAL_SPEED;
 	}
 
@@ -70,7 +75,7 @@ public abstract class Entity {
 	 * 
 	 * @return Horizontal movement speed.
 	 */
-	public int getHorizontalSpeed() {
+	public float getHorizontalSpeed() {
 		return HORIZONTAL_SPEED;
 	}
 
@@ -80,7 +85,8 @@ public abstract class Entity {
 	 * @param timeScale
 	 *            Player-based timescaling.
 	 */
-	public void updateEntity(double timeScale) {
+	public void updateEntity(float timeScale) {
+		translate(getHorizontalSpeed() * timeScale, getVerticalSpeed() * timeScale);
 	}
 
 	/**
@@ -121,23 +127,15 @@ public abstract class Entity {
 		return new Point((int) mX, (int) mY);
 	}
 
-	protected double getX() {
+	protected float getX() {
 		return mX;
 	}
 
-	protected double getY() {
+	protected float getY() {
 		return mY;
 	}
 
-	protected void setX(double x) {
-		mX = x;
-	}
-
-	protected void setY(double y) {
-		mY = y;
-	}
-
-	protected void translate(double x, double y) {
+	protected void translate(float x, float y) {
 		mX += x;
 		mY += y;
 	}
@@ -149,12 +147,21 @@ public abstract class Entity {
 	 *            control point.
 	 * @return true, when the point does collide.
 	 */
-	public abstract boolean doesHit(Point p);
+	public boolean doesHit(Point p) {
+		int w = mWidth / 2;
+		int h = mHeight / 2;
+		if (p.x >= getX() - w / 2 && p.x <= getX() + w / 2) {
+			if (p.y >= getY() - h / 2 && p.y <= getY() + h / 2) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Destroys the entity.
 	 */
-	public abstract void destroy();
+	public void destroy() {}
 
 	public abstract boolean destroyAnimationDone();
 

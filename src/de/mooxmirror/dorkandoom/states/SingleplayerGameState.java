@@ -36,6 +36,7 @@ public class SingleplayerGameState implements GameState {
 	final private int ASTEROID_SPAWN_FREQUENZY = 1000;
 	final private int ORBIT_SPAWN_FREQUENZY = 3000;
 	final private int POWERUP_SPAWN_FREQUENZY = 5000;
+	final private int PULSAR_SPAWN_FREQUENZY = 3000;
 	final private int PROJECTILE_SPAWN_FREQUENZY = 100;
 	final private int BOOST_DURATION_TIME = 2000;
 	final private int BOOST_UPDATE_TIME = 60;
@@ -52,7 +53,7 @@ public class SingleplayerGameState implements GameState {
 	private int mScore = 0;
 	private long mScoreTimer = 0;
 
-	private double mDelta = 1;
+	private float mDelta = 1;
 
 	private boolean mRightKeyState;
 	private boolean mLeftKeyState;
@@ -66,13 +67,14 @@ public class SingleplayerGameState implements GameState {
 	private long mOrbitTimer;
 	private long mPowerupTimer;
 	private long mProjectileTimer;
+	private long mPulsarTimer;
 
 	private int mSlowdownCounter = 500;
 	private long mCleanupTimer;
 	private boolean mBoost;
 	private long mBoostStart;
-	private double mBoostDeltaOffset;
-	private double mBoostDeltaOriginal;
+	private float mBoostDeltaOffset;
+	private float mBoostDeltaOriginal;
 	private long mBoostTimer;
 
 	private int mOverlayAlpha;
@@ -186,7 +188,13 @@ public class SingleplayerGameState implements GameState {
 	}
 
 	private void spawnPulsar() {
-
+		if (System.currentTimeMillis() - mPulsarTimer > (mRng.nextInt(PULSAR_SPAWN_FREQUENZY) + PULSAR_SPAWN_FREQUENZY)
+				/ mDelta) {
+			Pulsar pulsar = new Pulsar();
+			pulsar.setPosition(new Point(mRng.nextInt(224) + 16, 0));
+			mEnemies.add(pulsar);
+			mPulsarTimer = System.currentTimeMillis();
+		}
 	}
 
 	private void spawnPowerUps() {
@@ -398,7 +406,7 @@ public class SingleplayerGameState implements GameState {
 
 			if (Math.sqrt(Math.abs(playerPosition.x - mEnemies.get(ec).getPosition().x)
 					+ Math.abs(playerPosition.y - mEnemies.get(ec).getPosition().y)) < 16) {
-				mEnemies.get(ec).shot(mDelta);
+				mEnemies.get(ec).shoot(mDelta);
 			}
 			if (Math.sqrt(Math.abs(playerPosition.x - mEnemies.get(ec).getPosition().x)
 					+ Math.abs(playerPosition.y - mEnemies.get(ec).getPosition().y)) < 8) {
@@ -441,7 +449,7 @@ public class SingleplayerGameState implements GameState {
 			if (System.currentTimeMillis() - mBoostStart < BOOST_DURATION_TIME) {
 				mDelta = mBoostDeltaOriginal
 						+ mBoostDeltaOffset * ((mBoostStart + BOOST_DURATION_TIME - System.currentTimeMillis())
-								/ (double) BOOST_DURATION_TIME);
+								/ (float) BOOST_DURATION_TIME);
 				System.out.println(mDelta);
 			} else {
 				mDelta = mBoostDeltaOriginal;
@@ -460,9 +468,9 @@ public class SingleplayerGameState implements GameState {
 			Game.dataStorage.add(new Integer(mScore));
 		}
 		mSlowdownCounter--;
-		mDelta = ((double) mSlowdownCounter) / 500;
+		mDelta = mSlowdownCounter / 500f;
 
-		mOverlayAlpha = (int) ((500 - (double) mSlowdownCounter) / 500 * 255d);
+		mOverlayAlpha = (int) ((500f - mSlowdownCounter) / 500f * 255f);
 		if (mSlowdownCounter <= 0) {
 			Game.getStates().load(2);
 		}

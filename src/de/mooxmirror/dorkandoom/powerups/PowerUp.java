@@ -20,74 +20,32 @@ public class PowerUp extends Entity {
 
 	private final String[] POWERUP_SPRITE_SOURCES = { "Boost_Faster.png", "Boost_Slower.png", "Double_Shoot.png",
 			"Triple_Shoot.png", "Quadro_Shoot.png", "Health_Restore.png" };
-	private ArrayList<BufferedImage> _powerUpSpriteSheet;
-	private int _localEffect;
-
-	@Override
-	public int getHitpoints() {
-		return 0;
-	}
+	private ArrayList<BufferedImage> mPowerUpSprites;
+	private int mLocalEffect;
 
 	public void setPowerUpEffect(int effect) {
-		_localEffect = effect;
+		mLocalEffect = effect;
 	}
 
 	public int getPowerUpEffect() {
-		return _localEffect;
+		return mLocalEffect;
 	}
 
 	@Override
 	public void setHitpoints(int hitpoints) {
-
-	}
-
-	@Override
-	public boolean hasHitbox() {
-		return false;
-	}
-
-	@Override
-	public int getVerticalSpeed() {
-		return 2;
-	}
-
-	@Override
-	public int getHorizontalSpeed() {
-		return 0;
-	}
-
-	@Override
-	public void updateEntity(double timeScale) {
-		translate(0, timeScale * getVerticalSpeed());
 	}
 
 	@Override
 	public void drawEntity(Graphics2D g2d) {
-		g2d.drawImage(_powerUpSpriteSheet.get(_localEffect), (int) getX() - 16, (int) getY() - 16, 32, 32, null);
-	}
-
-	@Override
-	public boolean doesHit(Point p) {
-		if (p.x >= getX() - 16 && p.x <= getX() + 16) {
-			if (p.y >= getY() - 16 && p.y < getY() + 16) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	@Override
-	public void destroy() {
-		// TODO Automatisch generierter Methodenstub
-
+		g2d.drawImage(mPowerUpSprites.get(mLocalEffect), (int) getX() - 16, (int) getY() - 16, 32, 32, null);
 	}
 
 	public PowerUp() {
-		super(0, false, 2, 0);
-		_powerUpSpriteSheet = new ArrayList<BufferedImage>();
+		super(0, false, 2, 0, 32, 32);
+		mPowerUpSprites = new ArrayList<BufferedImage>();
 		for (int i = 0; i < POWERUP_SPRITE_SOURCES.length; i++) {
 			try {
-				_powerUpSpriteSheet.add(ImageIO.read(new File("res/images/powerups/" + POWERUP_SPRITE_SOURCES[i])));
+				mPowerUpSprites.add(ImageIO.read(new File("res/images/powerups/" + POWERUP_SPRITE_SOURCES[i])));
 			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println("res/images/powerups/" + POWERUP_SPRITE_SOURCES[i]);

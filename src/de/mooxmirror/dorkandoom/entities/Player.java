@@ -30,11 +30,11 @@ public class Player extends Entity {
 	private BufferedImage mOrbiterSprite;
 	private List<BufferedImage> mParticleSpriteList;
 
-	public Player(double x, double y) {
-		super(100, true, 0, 5);
+	public Player(float x, float y) {
+		super(100, true, 5, 0, 64, 64);
+		translate(x, y);
+		
 		mParticleSpriteList = new ArrayList<BufferedImage>();
-		setX(x);
-		setY(y);
 
 		try {
 			mOrbiterSprite = ImageIO.read(new File("res/images/orbiter.png"));
@@ -86,16 +86,6 @@ public class Player extends Entity {
 
 	public boolean getInvincible() {
 		return mShieldStatus;
-	}
-
-	@Override
-	public boolean doesHit(Point p) {
-		if (p.x >= getX() - 32 && p.x <= getX() + 32) {
-			if (p.y >= getY() - 32 && p.y <= getY() + 32) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@Override

@@ -21,11 +21,11 @@ public class Asteroid extends Entity implements Destroyable {
 	private List<BufferedImage> mExplosionSpriteList;
 	private long mLastFrameUpdate;
 
-	private BufferedImage _asteroidImage;
+	private BufferedImage mSprite;
 
 	@Override
-	public void updateEntity(double timeScale) {
-		translate(0, getVerticalSpeed() * timeScale);
+	public void updateEntity(float timeScale) {
+		super.updateEntity(timeScale);
 		mRotationAngle += mRotationAmount * timeScale;
 	}
 
@@ -37,7 +37,7 @@ public class Asteroid extends Entity implements Destroyable {
 		at.rotate(mRotationAngle);
 		g2d.setTransform(at);
 		if (!mExplosionActive)
-			g2d.drawImage(_asteroidImage, -32, -32, 64, 64, null);
+			g2d.drawImage(mSprite, -32, -32, 64, 64, null);
 		else {
 			if (System.currentTimeMillis() - mLastFrameUpdate > 100) {
 				mFrameCounter++;
@@ -53,12 +53,12 @@ public class Asteroid extends Entity implements Destroyable {
 	}
 
 	public Asteroid() {
-		super(3, true, 1, 5);
+		super(3, true, 0, 5, 64, 64);
 		mRotationAmount = new Random().nextDouble() / 50 - 0.01;
 
 		mExplosionSpriteList = new ArrayList<BufferedImage>();
 		try {
-			_asteroidImage = ImageIO.read(new File("res/images/asteroid.png"));
+			mSprite = ImageIO.read(new File("res/images/asteroid.png"));
 
 			for (int i = 0; i < mLastFrameId; i++) {
 				mExplosionSpriteList.add(ImageIO.read(new File("res/images/asteroid/explode_" + i + ".png")));
@@ -66,16 +66,6 @@ public class Asteroid extends Entity implements Destroyable {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-
-	@Override
-	public boolean doesHit(Point p) {
-		if (p.x > getX() - 32 && p.x < getX() + 32) {
-			if (p.y > getY() - 32 && p.y < getY() + 32) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@Override

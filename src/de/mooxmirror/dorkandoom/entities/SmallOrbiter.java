@@ -52,7 +52,7 @@ public class SmallOrbiter extends Enemy {
 	}
 
 	public SmallOrbiter() {
-		super(4, true, 2, 5);
+		super(4, true, 0, 3, 64, 64);
 		mExplosionSpriteList = new ArrayList<BufferedImage>();
 
 		try {
@@ -66,7 +66,7 @@ public class SmallOrbiter extends Enemy {
 	}
 
 	@Override
-	public void shot(double timeScale) {
+	public void shoot(double timeScale) {
 		if (!mExplosionActive) {
 			if (System.currentTimeMillis() - mLastProjectileSpawnTimer > 100 / timeScale) {
 
@@ -82,16 +82,6 @@ public class SmallOrbiter extends Enemy {
 				mLastProjectileSpawnTimer = System.currentTimeMillis();
 			}
 		}
-	}
-
-	@Override
-	public boolean doesHit(Point p) {
-		if (p.x >= getX() - 32 && p.x <= getX() + 32) {
-			if (p.y >= getY() - 32 && p.y < getY() + 32) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	@Override

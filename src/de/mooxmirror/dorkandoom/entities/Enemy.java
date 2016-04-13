@@ -14,14 +14,14 @@ import de.mooxmirror.dorkandoom.projectiles.EnemyProjectile;
 public abstract class Enemy extends Entity {
 	private final List<EnemyProjectile> mProjectiles;
 
-	protected Enemy(int maxHitpoints, boolean hasHitbox, int verticalSpeed, int horizontalSpeed) {
-		super(maxHitpoints, hasHitbox, verticalSpeed, horizontalSpeed);
+	protected Enemy(int maxHitpoints, boolean hasHitbox, int verticalSpeed, int horizontalSpeed, int width, int height) {
+		super(maxHitpoints, hasHitbox, verticalSpeed, horizontalSpeed, width, height);
 		mProjectiles = new ArrayList<EnemyProjectile>();
 	}
 
 	@Override
-	public void updateEntity(double timeScale) {
-		translate(0, getVerticalSpeed() * timeScale);
+	public void updateEntity(float timeScale) {
+		super.updateEntity(timeScale);
 
 		if (getHitpoints() == 0) {
 			destroy();
@@ -45,5 +45,5 @@ public abstract class Enemy extends Entity {
 	 * 
 	 * @param timeScale
 	 */
-	public abstract void shot(double timeScale);
+	public abstract void shoot(double timeScale);
 }
