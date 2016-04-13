@@ -12,33 +12,33 @@ public class StateManager {
 	/**
 	 * Stores the game states.
 	 */
-	List<GameState> states;
+	List<GameState> mStates;
 	/**
 	 * Stores the current game state.
 	 */
-	GameState currentGameState;
+	GameState mCurrentState;
 	/**
 	 * Initialize the state manager.
 	 */
 	public StateManager() {
-		states = new ArrayList<GameState>();
+		mStates = new ArrayList<GameState>();
 
-		states.add(new MainMenuState());
-		states.add(new SingleplayerGameState());
-		states.add(new HighscoreScreenState());
-		states.add(new CreditsScreenState());
-		currentGameState = states.get(0);
-		currentGameState.init();
+		mStates.add(new MainMenuState());
+		mStates.add(new SingleplayerGameState());
+		mStates.add(new HighscoreScreenState());
+		mStates.add(new CreditsScreenState());
+		mCurrentState = mStates.get(0);
+		mCurrentState.init();
 	}
-	public GameState getCurrentState() {
-		return currentGameState;
+	public GameState current() {
+		return mCurrentState;
 	}
-	public void dropState() {
-		currentGameState = null;
+	public void drop() {
+		mCurrentState = null;
 	}
-	public void loadState(int stateID) {
-		currentGameState = null;
-		currentGameState = states.get(stateID);
-		currentGameState.init();
+	public void load(int id) {
+		mCurrentState = null;
+		mCurrentState = mStates.get(id);
+		mCurrentState.init();
 	}
 }

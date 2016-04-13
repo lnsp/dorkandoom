@@ -1,6 +1,5 @@
 package de.mooxmirror.dorkandoom.entities;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.geom.AffineTransform;
@@ -13,127 +12,84 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
-public class Asteroid implements GameEntity, Destroyable {
-	private final int 			MAXIMUM_HITPOINTS = 3;
-	private final boolean 		HAS_HITBOX = true;
-	private final int 			VERTICAL_MOVEMENT_SPEED = 1;
-	private final int 			HORIZONTAL_MOVEMENT_SPEED = 5;
-	private double 				_objectRotationAngle = 0;
-	private double 				_objectRotationAmount = 0.05;
-	private boolean 			_explosionActive = false;
-	private int 				_frameAnimationCounter = 0;
-	private int 				_lastAnimationFrameID = 8;
-	private List<BufferedImage> _explosionSpriteSheet;
-	private long 				_lastExplosionFrameUpdate;
+public class Asteroid extends Entity implements Destroyable {
+	private double mRotationAngle = 0;
+	private double mRotationAmount = 0.05;
+	private boolean mExplosionActive = false;
+	private int mFrameCounter = 0;
+	private int mLastFrameId = 8;
+	private List<BufferedImage> mExplosionSpriteList;
+	private long mLastFrameUpdate;
 
-	private BufferedImage 		_asteroidImage;
-	private double 				_positionX = 0, _positionY = 0;
-	private int					_currentHitpoints = MAXIMUM_HITPOINTS;
-	
-	@Override
-	public int getHitpoints() {
-		return _currentHitpoints;
-	}
-
-	@Override
-	public void setHitpoints(int hitpoints) {
-		_currentHitpoints = hitpoints;
-	}
-
-	@Override
-	public boolean hasHitbox() {
-		return HAS_HITBOX;
-	}
-
-	@Override
-	public int getVerticalSpeed() {
-		return VERTICAL_MOVEMENT_SPEED;
-	}
-
-	@Override
-	public int getHorizontalSpeed() {
-		return HORIZONTAL_MOVEMENT_SPEED;
-	}
+	private BufferedImage _asteroidImage;
 
 	@Override
 	public void updateEntity(double timeScale) {
-		_positionY += VERTICAL_MOVEMENT_SPEED * timeScale;
-		_objectRotationAngle += _objectRotationAmount * timeScale;
+		translate(0, getVerticalSpeed() * timeScale);
+		mRotationAngle += mRotationAmount * timeScale;
 	}
 
 	@Override
 	public void drawEntity(Graphics2D g2d) {
 		AffineTransform at = new AffineTransform();
-		at.translate(_positionX, _positionY);
+		at.translate(getX(), getY());
 
-		at.rotate(_objectRotationAngle);
+		at.rotate(mRotationAngle);
 		g2d.setTransform(at);
-		if (!_explosionActive) g2d.drawImage(_asteroidImage, -32, -32, 64, 64,   null);
+		if (!mExplosionActive)
+			g2d.drawImage(_asteroidImage, -32, -32, 64, 64, null);
 		else {
-			if (System.currentTimeMillis() - _lastExplosionFrameUpdate > 100) {
-				_frameAnimationCounter++;
-				_lastExplosionFrameUpdate = System.currentTimeMillis();
+			if (System.currentTimeMillis() - mLastFrameUpdate > 100) {
+				mFrameCounter++;
+				mLastFrameUpdate = System.currentTimeMillis();
 			}
-			if (_frameAnimationCounter < _lastAnimationFrameID) g2d.drawImage(_explosionSpriteSheet.get(_frameAnimationCounter), -32, -32, 64, 64,   null);
+			if (mFrameCounter < mLastFrameId)
+				g2d.drawImage(mExplosionSpriteList.get(mFrameCounter), -32, -32, 64, 64, null);
 
 		}
 		g2d.setTransform(new AffineTransform());
-		
-		double healthSize = (double) _currentHitpoints / MAXIMUM_HITPOINTS * 64;
-		g2d.setColor(Color.RED);
-		g2d.fillRect((int) _positionX - 32, (int) _positionY - 48, (int) healthSize, 4);
-		
-		g2d.setColor(Color.BLACK);
-		g2d.fillRect((int) _positionX - 12, (int) _positionY - 48, 3, 4);
-		g2d.fillRect((int) _positionX + 11, (int) _positionY - 48, 3, 4);
-		
+
+		drawHealthBar(g2d);
 	}
 
-	@Override
-	public void setPosition(Point p) {
-		_positionX = p.x;
-		_positionY = p.y;
-	}
 	public Asteroid() {
-		_currentHitpoints = MAXIMUM_HITPOINTS;
-		_objectRotationAmount = new Random().nextDouble() / 50 - 0.01;
+		super(3, true, 1, 5);
+		mRotationAmount = new Random().nextDouble() / 50 - 0.01;
 
-		_explosionSpriteSheet = new ArrayList<BufferedImage>();
+		mExplosionSpriteList = new ArrayList<BufferedImage>();
 		try {
 			_asteroidImage = ImageIO.read(new File("res/images/asteroid.png"));
 
-			for (int i = 0; i < _lastAnimationFrameID; i++) {
-				_explosionSpriteSheet.add(ImageIO.read(new File("res/images/asteroid/explode_" + i + ".png")));
+			for (int i = 0; i < mLastFrameId; i++) {
+				mExplosionSpriteList.add(ImageIO.read(new File("res/images/asteroid/explode_" + i + ".png")));
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
-	@Override
-	public Point getPosition() {
-		return new Point((int) _positionX, (int) _positionY);
-	}
 
 	@Override
 	public boolean doesHit(Point p) {
-		if (p.x > _positionX - 32 && p.x < _positionX + 32) {
-			if (p.y > _positionY - 32 && p.y < _positionY + 32) {
+		if (p.x > getX() - 32 && p.x < getX() + 32) {
+			if (p.y > getY() - 32 && p.y < getY() + 32) {
 				return true;
 			}
 		}
 		return false;
 	}
+
 	@Override
 	public void destroy() {
-		_explosionActive = true;
+		mExplosionActive = true;
 	}
+
 	@Override
 	public boolean destroyAnimationDone() {
-		return (_frameAnimationCounter >= _lastAnimationFrameID);
+		return (mFrameCounter >= mLastFrameId);
 	}
 
 	@Override
 	public boolean destroyAnimationRunning() {
-		return (_frameAnimationCounter != 0);
+		return (mFrameCounter != 0);
 	}
 }

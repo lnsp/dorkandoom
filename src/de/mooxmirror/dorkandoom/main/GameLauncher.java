@@ -2,6 +2,7 @@ package de.mooxmirror.dorkandoom.main;
 
 /**
  * The GameLauncher launches the game window.
+ * 
  * @author Mooxmirror
  * @version 0.1.0-0001
  */

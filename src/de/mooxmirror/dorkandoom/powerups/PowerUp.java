@@ -8,37 +8,34 @@ import java.util.ArrayList;
 
 import javax.imageio.ImageIO;
 
-import de.mooxmirror.dorkandoom.entities.GameEntity;
+import de.mooxmirror.dorkandoom.entities.Entity;
 
-public class PowerUp implements GameEntity {
-	public static final int	BOOST_FASTER = 0,
-							BOOST_SLOWER = 1,
-							DOUBLE_SHOT = 2,
-							TRIPLE_SHOT = 3,
-							QUADRO_SHOT = 4,
-							HEALTH_RESTORE = 5;
-	private final String[] 				POWERUP_SPRITE_SOURCES = {
-			"Boost_Faster.png",
-			"Boost_Slower.png",
-			"Double_Shoot.png",
-			"Triple_Shoot.png",
-			"Quadro_Shoot.png",
-			"Health_Restore.png"
-	};
-	private ArrayList<BufferedImage> 	_powerUpSpriteSheet;
-	private double 						_positionX = 0, _positionY = 0;
-	private int 						_localEffect;
+public class PowerUp extends Entity {
+	public static final int BOOST_FASTER = 0;
+	public static final int BOOST_SLOWER = 1;
+	public static final int DOUBLE_SHOT = 2;
+	public static final int TRIPLE_SHOT = 3;
+	public static final int QUADRO_SHOT = 4;
+	public static final int HEALTH_RESTORE = 5;
+
+	private final String[] POWERUP_SPRITE_SOURCES = { "Boost_Faster.png", "Boost_Slower.png", "Double_Shoot.png",
+			"Triple_Shoot.png", "Quadro_Shoot.png", "Health_Restore.png" };
+	private ArrayList<BufferedImage> _powerUpSpriteSheet;
+	private int _localEffect;
 
 	@Override
 	public int getHitpoints() {
 		return 0;
 	}
+
 	public void setPowerUpEffect(int effect) {
 		_localEffect = effect;
 	}
+
 	public int getPowerUpEffect() {
 		return _localEffect;
 	}
+
 	@Override
 	public void setHitpoints(int hitpoints) {
 
@@ -51,41 +48,28 @@ public class PowerUp implements GameEntity {
 
 	@Override
 	public int getVerticalSpeed() {
-		// TODO Automatisch generierter Methodenstub
 		return 2;
 	}
 
 	@Override
 	public int getHorizontalSpeed() {
-		// TODO Automatisch generierter Methodenstub
 		return 0;
 	}
 
 	@Override
 	public void updateEntity(double timeScale) {
-		_positionY += timeScale * getVerticalSpeed();
+		translate(0, timeScale * getVerticalSpeed());
 	}
 
 	@Override
 	public void drawEntity(Graphics2D g2d) {
-		g2d.drawImage(_powerUpSpriteSheet.get(_localEffect), (int) _positionX - 16, (int) _positionY - 16, 32, 32, null);
-	}
-
-	@Override
-	public void setPosition(Point p) {
-		_positionX = p.x;
-		_positionY = p.y;
-	}
-
-	@Override
-	public Point getPosition() {
-		return new Point((int) _positionX, (int) _positionY);
+		g2d.drawImage(_powerUpSpriteSheet.get(_localEffect), (int) getX() - 16, (int) getY() - 16, 32, 32, null);
 	}
 
 	@Override
 	public boolean doesHit(Point p) {
-		if (p.x >= _positionX - 16 && p.x <= _positionX + 16) {
-			if (p.y >= _positionY - 16 && p.y < _positionY + 16) {
+		if (p.x >= getX() - 16 && p.x <= getX() + 16) {
+			if (p.y >= getY() - 16 && p.y < getY() + 16) {
 				return true;
 			}
 		}
@@ -97,27 +81,27 @@ public class PowerUp implements GameEntity {
 		// TODO Automatisch generierter Methodenstub
 
 	}
+
 	public PowerUp() {
+		super(0, false, 2, 0);
 		_powerUpSpriteSheet = new ArrayList<BufferedImage>();
 		for (int i = 0; i < POWERUP_SPRITE_SOURCES.length; i++) {
 			try {
 				_powerUpSpriteSheet.add(ImageIO.read(new File("res/images/powerups/" + POWERUP_SPRITE_SOURCES[i])));
-			}
-			catch (Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 				System.out.println("res/images/powerups/" + POWERUP_SPRITE_SOURCES[i]);
 			}
 		}
 	}
+
 	@Override
 	public boolean destroyAnimationDone() {
-		// TODO Automatisch generierter Methodenstub
 		return false;
 	}
 
 	@Override
 	public boolean destroyAnimationRunning() {
-		// TODO Automatisch generierter Methodenstub
 		return false;
 	}
 

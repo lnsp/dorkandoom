@@ -15,7 +15,7 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 import de.mooxmirror.dorkandoom.entities.Asteroid;
-import de.mooxmirror.dorkandoom.entities.EnemyEntity;
+import de.mooxmirror.dorkandoom.entities.Enemy;
 import de.mooxmirror.dorkandoom.entities.Player;
 import de.mooxmirror.dorkandoom.entities.Pulsar;
 import de.mooxmirror.dorkandoom.entities.SmallOrbiter;
@@ -27,57 +27,58 @@ import de.mooxmirror.dorkandoom.projectiles.Projectile;
 
 /**
  * Main game state with asteroids etc.
+ * 
  * @author Mooxmirror
  * @version 1.0
  */
 public class SingleplayerGameState implements GameState {
-	final private int			SCORE_COUNT_FREQUENZY = 200;
-	final private int			ASTEROID_SPAWN_FREQUENZY = 1000;
-	final private int			ORBIT_SPAWN_FREQUENZY = 3000;
-	final private int			POWERUP_SPAWN_FREQUENZY = 5000;
-	final private int			PROJECTILE_SPAWN_FREQUENZY = 100;
-	final private int 			BOOST_DURATION_TIME = 2000;
-	final private int			BOOST_UPDATE_TIME = 60;
+	final private int SCORE_COUNT_FREQUENZY = 200;
+	final private int ASTEROID_SPAWN_FREQUENZY = 1000;
+	final private int ORBIT_SPAWN_FREQUENZY = 3000;
+	final private int POWERUP_SPAWN_FREQUENZY = 5000;
+	final private int PROJECTILE_SPAWN_FREQUENZY = 100;
+	final private int BOOST_DURATION_TIME = 2000;
+	final private int BOOST_UPDATE_TIME = 60;
 
-	private Random 				randomValueGenerator;
+	private Random mRng;
 
-	private Player 				gamePlayer;
-	private List<Projectile> 	gameProjectiles;
-	private List<Asteroid> 		gameAsteroids;
-	private List<EnemyEntity> 	gameEnemies;
-	private List<PowerUp> 		gamePowerUps;
-	private BufferedImage 		overlayHUD;
+	private Player mPlayer;
+	private List<Projectile> mProjectiles;
+	private List<Asteroid> mAsteroids;
+	private List<Enemy> mEnemies;
+	private List<PowerUp> mPowerups;
+	private BufferedImage mOverlaySprite;
 
-	private int 				gameScore = 0;
-	private long				_scoreCountTimer = 0;
+	private int mScore = 0;
+	private long mScoreTimer = 0;
 
-	private double 				gameDelta = 1;
+	private double mDelta = 1;
 
-	private boolean 			_rightButtonPressed;
-	private boolean 			_leftButtonPressed;
-	private boolean 			_spaceButtonPressed;
-	private boolean 			_playerProjectileSourceSwitcher;
-	private byte				_playerProjectileSpawnAmount = 1;
-	private byte				_projectileSourceCounter = 100;
-	private float				_projectileReloadCounter = 100;
+	private boolean mRightKeyState;
+	private boolean mLeftKeyState;
+	private boolean mSpaceKeyState;
+	private boolean mPlayerProjectileSwitch;
+	private byte mPlayerProjectileAmount = 1;
+	private byte mProjectileSource = 100;
+	private float mProjectileReload = 100;
 
-	private long 				_asteroidSpawnTimer;
-	private long 				_orbitSpawnTimer;
-	private long 				_powerupSpawnTimer;
-	private long				_projectileSpawnTimer;
+	private long mAsteroidTimer;
+	private long mOrbitTimer;
+	private long mPowerupTimer;
+	private long mProjectileTimer;
 
-	private int 				_slowdownCounter = 500;
-	private long				_cleanUpEntitiesTimer;
-	private boolean				_temporaryBoostActive;
-	private long				_temporaryBoostStartTime;
-	private double				_temporaryDeltaOffset;
-	private double				_temporaryOriginalDelta;
-	private long				_temporaryBoostTimer;
+	private int mSlowdownCounter = 500;
+	private long mCleanupTimer;
+	private boolean mBoost;
+	private long mBoostStart;
+	private double mBoostDeltaOffset;
+	private double mBoostDeltaOriginal;
+	private long mBoostTimer;
 
-	private int					_darkOverlayAlpha;
-	private int					_darkOverlayTimer;
-	
-	private boolean				_gamePaused;
+	private int mOverlayAlpha;
+	private int mOverlayTimer;
+
+	private boolean mPaused;
 
 	public SingleplayerGameState() {
 		init();
@@ -85,14 +86,14 @@ public class SingleplayerGameState implements GameState {
 
 	@Override
 	public void init() {
-		randomValueGenerator = new Random();
-		gamePlayer = new Player(128, 418);
-		gameProjectiles = new ArrayList<Projectile>();
-		gameAsteroids = new ArrayList<Asteroid>();
-		gameEnemies = new ArrayList<EnemyEntity>();
-		gamePowerUps = new ArrayList<PowerUp>();
+		mRng = new Random();
+		mPlayer = new Player(128, 418);
+		mProjectiles = new ArrayList<Projectile>();
+		mAsteroids = new ArrayList<Asteroid>();
+		mEnemies = new ArrayList<Enemy>();
+		mPowerups = new ArrayList<PowerUp>();
 		try {
-			overlayHUD = ImageIO.read(new File("res/images/hud/overlay.png"));
+			mOverlaySprite = ImageIO.read(new File("res/images/hud/overlay.png"));
 			System.out.println("Overlay succesfully loaded.");
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -101,51 +102,50 @@ public class SingleplayerGameState implements GameState {
 
 	@Override
 	public void draw(Graphics2D g2d) {
-		gamePlayer.drawEntity(g2d);
+		mPlayer.drawEntity(g2d);
 
-		for (Projectile p : gameProjectiles) {
+		for (Projectile p : mProjectiles) {
 			p.drawProjectile(g2d);
 		}
-		for (Asteroid p : gameAsteroids) {
+		for (Asteroid p : mAsteroids) {
 			p.drawEntity(g2d);
 		}
-		for (EnemyEntity e : gameEnemies) {
+		for (Enemy e : mEnemies) {
 			e.drawEntity(g2d);
 		}
-		for (PowerUp p: gamePowerUps) {
+		for (PowerUp p : mPowerups) {
 			p.drawEntity(g2d);
 		}
 
-		int life = gamePlayer.getHitpoints();
+		int life = mPlayer.getHitpoints();
 		int calcBarLife = life * 2;
-		int calcBarShots = (int) _projectileReloadCounter * 2;
+		int calcBarShots = (int) mProjectileReload * 2;
 
 		g2d.setColor(Color.BLACK);
 		g2d.fillRect(0, 0, 256, 32);
-		if (!gamePlayer.getInvincible()) {
+		if (!mPlayer.getInvincible()) {
 			g2d.setColor(Color.GREEN);
-		}
-		else {
+		} else {
 			g2d.setColor(Color.WHITE);
 		}
 		g2d.fillRect(5, 5, (int) calcBarLife, 10);
-		if (!gamePlayer.getInvincible()) {
+		if (!mPlayer.getInvincible()) {
 			g2d.setColor(Color.RED);
-		}
-		else {
+		} else {
 			g2d.setColor(Color.WHITE);
 		}
 		g2d.fillRect(5, 19, (int) calcBarShots, 10);
 
-		g2d.drawImage(overlayHUD, 0, 0, 256, 512, null);
+		g2d.drawImage(mOverlaySprite, 0, 0, 256, 512, null);
 		g2d.setColor(Color.WHITE);
 
-		String highscoreString = Integer.toString(gameScore) + " Meter";
-		String lifeString = Integer.toString(gamePlayer.getHitpoints()) + " / 100";
-		String shotsString = Float.toString(_projectileReloadCounter) + " / 100";
+		String highscoreString = Integer.toString(mScore) + " Meter";
+		String lifeString = Integer.toString(mPlayer.getHitpoints()) + " / 100";
+		String shotsString = Float.toString(mProjectileReload) + " / 100";
 
-		if (gamePlayer.getInvincible()) {
-			lifeString = "Infinite!"; shotsString = "Infinite!";
+		if (mPlayer.getInvincible()) {
+			lifeString = "Infinite!";
+			shotsString = "Infinite!";
 		}
 		g2d.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 9));
 		FontMetrics fm = g2d.getFontMetrics();
@@ -154,257 +154,279 @@ public class SingleplayerGameState implements GameState {
 		g2d.drawString(shotsString, 250 - (fm.stringWidth(shotsString)), 26);
 		g2d.drawString(lifeString, 250 - (fm.stringWidth(lifeString)), 14);
 
-		g2d.setColor(new Color(0,0,0, _darkOverlayAlpha));
+		g2d.setColor(new Color(0, 0, 0, mOverlayAlpha));
 		g2d.fillRect(0, 0, 256, 512);
 	}
 
 	private void updateHighscore() {
-		if (System.currentTimeMillis() - _scoreCountTimer > SCORE_COUNT_FREQUENZY /  gameDelta) {
-			gameScore += 1;
-			_scoreCountTimer = System.currentTimeMillis();
+		if (System.currentTimeMillis() - mScoreTimer > SCORE_COUNT_FREQUENZY / mDelta) {
+			mScore += 1;
+			mScoreTimer = System.currentTimeMillis();
 		}
 	}
+
 	private void spawnAsteroids() {
-		if (System.currentTimeMillis() - _asteroidSpawnTimer > (randomValueGenerator.nextInt(ASTEROID_SPAWN_FREQUENZY) + ASTEROID_SPAWN_FREQUENZY) / gameDelta) {
+		if (System.currentTimeMillis()
+				- mAsteroidTimer > (mRng.nextInt(ASTEROID_SPAWN_FREQUENZY) + ASTEROID_SPAWN_FREQUENZY) / mDelta) {
 			Asteroid a = new Asteroid();
-			a.setPosition(new Point(randomValueGenerator.nextInt(224) + 16, 0));
-			gameAsteroids.add(a);
-			_asteroidSpawnTimer = System.currentTimeMillis();
+			a.setPosition(new Point(mRng.nextInt(224) + 16, 0));
+			mAsteroids.add(a);
+			mAsteroidTimer = System.currentTimeMillis();
 		}
 	}
+
 	private void spawnOrbits() {
-		if (System.currentTimeMillis() - _orbitSpawnTimer > (randomValueGenerator.nextInt(ORBIT_SPAWN_FREQUENZY) + ORBIT_SPAWN_FREQUENZY) / gameDelta) {
+		if (System.currentTimeMillis() - mOrbitTimer > (mRng.nextInt(ORBIT_SPAWN_FREQUENZY) + ORBIT_SPAWN_FREQUENZY)
+				/ mDelta) {
 			SmallOrbiter smallOrbiter = new SmallOrbiter();
-			smallOrbiter.setPosition(new Point(randomValueGenerator.nextInt(224) + 16, 0));
-			gameEnemies.add(smallOrbiter);
-			_orbitSpawnTimer = System.currentTimeMillis();
+			smallOrbiter.setPosition(new Point(mRng.nextInt(224) + 16, 0));
+			mEnemies.add(smallOrbiter);
+			mOrbitTimer = System.currentTimeMillis();
 		}
 	}
+
 	private void spawnPulsar() {
-		
+
 	}
+
 	private void spawnPowerUps() {
-		if (System.currentTimeMillis() - _powerupSpawnTimer > (randomValueGenerator.nextInt(POWERUP_SPAWN_FREQUENZY) + POWERUP_SPAWN_FREQUENZY) / gameDelta) {
+		if (System.currentTimeMillis()
+				- mPowerupTimer > (mRng.nextInt(POWERUP_SPAWN_FREQUENZY) + POWERUP_SPAWN_FREQUENZY) / mDelta) {
 			PowerUp p = new PowerUp();
-			p.setPowerUpEffect(randomValueGenerator.nextInt(6));
-			p.setPosition(new Point(randomValueGenerator.nextInt(224) + 16,   0));
-			gamePowerUps.add(p);
-			_powerupSpawnTimer = System.currentTimeMillis();
+			p.setPowerUpEffect(mRng.nextInt(6));
+			p.setPosition(new Point(mRng.nextInt(224) + 16, 0));
+			mPowerups.add(p);
+			mPowerupTimer = System.currentTimeMillis();
 		}
 	}
+
 	private void handleInput() {
-		Point playerPosition = gamePlayer.getPosition();
-		if (_leftButtonPressed) {
-			playerPosition.x -= gamePlayer.getHorizontalSpeed();
-			if(playerPosition.x < 32) playerPosition.x = 32;
+		Point playerPosition = mPlayer.getPosition();
+		if (mLeftKeyState) {
+			playerPosition.x -= mPlayer.getHorizontalSpeed();
+			if (playerPosition.x < 32)
+				playerPosition.x = 32;
 		}
-		if (_rightButtonPressed) {
-			playerPosition.x += gamePlayer.getHorizontalSpeed();
-			if(playerPosition.x > 224) playerPosition.x = 224;
+		if (mRightKeyState) {
+			playerPosition.x += mPlayer.getHorizontalSpeed();
+			if (playerPosition.x > 224)
+				playerPosition.x = 224;
 		}
-		if (_spaceButtonPressed) {
-			if (System.currentTimeMillis() - _projectileSpawnTimer > PROJECTILE_SPAWN_FREQUENZY) {
-				if (_projectileReloadCounter > 1) {
-					if(_playerProjectileSpawnAmount == 1) {
-						LaserProjectile laserProjectile = new LaserProjectile();
-						if(_playerProjectileSourceSwitcher) {
-							laserProjectile.spawn(playerPosition.x - 16, playerPosition.y - 20, -90);
+		if (mSpaceKeyState) {
+			if (System.currentTimeMillis() - mProjectileTimer > PROJECTILE_SPAWN_FREQUENZY) {
+				if (mProjectileReload > 1) {
+					if (mPlayerProjectileAmount == 1) {
+						LaserProjectile p = null;
+						if (mPlayerProjectileSwitch) {
+							p = new LaserProjectile(playerPosition.x - 16, playerPosition.y - 20, -90);
+						} else {
+							p = new LaserProjectile(playerPosition.x + 16, playerPosition.y - 20, -90);
 						}
-						else {
-							laserProjectile.spawn(playerPosition.x + 16, playerPosition.y - 20, -90);
-						}
-						gameProjectiles.add(laserProjectile);
-					}
-					else {
+						mProjectiles.add(p);
+					} else {
 						List<Integer> angles = new ArrayList<Integer>();
-						switch (_playerProjectileSpawnAmount) {
+						switch (mPlayerProjectileAmount) {
 						case 2:
-							angles.add(-100); angles.add(-80); break;
+							angles.add(-100);
+							angles.add(-80);
+							break;
 						case 3:
-							angles.add(-105); angles.add(-90); angles.add(-75); break;
+							angles.add(-105);
+							angles.add(-90);
+							angles.add(-75);
+							break;
 						case 4:
-							angles.add(-105); angles.add(-95); angles.add(-85); angles.add(-75); break;
+							angles.add(-105);
+							angles.add(-95);
+							angles.add(-85);
+							angles.add(-75);
+							break;
 						}
 						for (Integer m : angles) {
-							LaserProjectile laserProjectile = new LaserProjectile();
-							if (_playerProjectileSourceSwitcher) {
-								laserProjectile.spawn(playerPosition.x - 13 - (angles.size()  * 2), playerPosition.y - 20, m);
+							LaserProjectile p = null;
+							if (mPlayerProjectileSwitch) {
+								p = new LaserProjectile(playerPosition.x - 13 - (angles.size() * 2),
+										playerPosition.y - 20, m);
+							} else {
+								p = new LaserProjectile(playerPosition.x + 13 + (angles.size() * 2),
+										playerPosition.y - 20, m);
 							}
-							else {
-								laserProjectile.spawn(playerPosition.x + 13 + (angles.size()  * 2), playerPosition.y - 20, m);
-							}
-							gameProjectiles.add(laserProjectile);
+							mProjectiles.add(p);
 						}
-						_projectileSourceCounter--;
+						mProjectileSource--;
 
-						if (_projectileSourceCounter <= 0) {
-							_playerProjectileSpawnAmount = 1;
-							_projectileSourceCounter = 0;
+						if (mProjectileSource <= 0) {
+							mPlayerProjectileAmount = 1;
+							mProjectileSource = 0;
 						}
 					}
 
-					_playerProjectileSourceSwitcher = !_playerProjectileSourceSwitcher;
+					mPlayerProjectileSwitch = !mPlayerProjectileSwitch;
+				} else {
+					mSpaceKeyState = false;
 				}
-				else {
-					_spaceButtonPressed = false;
-				}
-				_projectileSpawnTimer = System.currentTimeMillis();
-				if(!gamePlayer.getInvincible()) _projectileReloadCounter -= 1;
+				mProjectileTimer = System.currentTimeMillis();
+				if (!mPlayer.getInvincible())
+					mProjectileReload -= 1;
 			}
+		} else {
+			mProjectileReload += 0.5;
+			if (mProjectileReload > 100)
+				mProjectileReload = 100;
 		}
-		else {
-			_projectileReloadCounter += 0.5;
-			if (_projectileReloadCounter > 100) _projectileReloadCounter = 100;
-		}
-		gamePlayer.setPosition(playerPosition);
+		mPlayer.setPosition(playerPosition);
 	}
+
 	private void handlePlayerProjectiles() {
-		for (int i = 0; i < gameProjectiles.size(); i++) {
-			gameProjectiles.get(i).update(gameDelta);
-			if (gameProjectiles.get(i).getPosition().y < 0) {
-				gameProjectiles.remove(i);
-			}
-			else {
+		for (int i = 0; i < mProjectiles.size(); i++) {
+			mProjectiles.get(i).update(mDelta);
+			if (mProjectiles.get(i).getPosition().y < 0) {
+				mProjectiles.remove(i);
+			} else {
 				try {
-					for (Asteroid a : gameAsteroids) {
-						if(a.doesHit(gameProjectiles.get(i).getPosition()) && !a.destroyAnimationRunning()) {
-							gameProjectiles.remove(i);
+					for (Asteroid a : mAsteroids) {
+						if (a.doesHit(mProjectiles.get(i).getPosition()) && !a.destroyAnimationRunning()) {
+							mProjectiles.remove(i);
 
 							if (a.getHitpoints() > 0) {
 								a.setHitpoints(a.getHitpoints() - 1);
 
-							}
-							else {
+							} else {
 								a.destroy();
 							}
 						}
 
 					}
-					for (EnemyEntity e : gameEnemies) {
-						if(e.doesHit(gameProjectiles.get(i).getPosition()) && !e.destroyAnimationRunning()) {
-							gameProjectiles.remove(i);
+					for (Enemy e : mEnemies) {
+						if (e.doesHit(mProjectiles.get(i).getPosition()) && !e.destroyAnimationRunning()) {
+							mProjectiles.remove(i);
 
 							if (e.getHitpoints() > 0) {
 								e.setHitpoints(e.getHitpoints() - 1);
 
-							}
-							else {
+							} else {
 								e.destroy();
 
 							}
 						}
 					}
+				} catch (Exception e) {
 				}
-				catch (Exception e) {}
 
 			}
 
 		}
 	}
+
 	private void testAsteroidCollision() {
-		Point playerPosition = gamePlayer.getPosition();
-		for (Asteroid a : gameAsteroids) {
-			a.updateEntity(gameDelta);
-			if (Math.sqrt(Math.abs(playerPosition.x - a.getPosition().x) + Math.abs(playerPosition.y - a.getPosition().y)) < 8) {
+		Point playerPosition = mPlayer.getPosition();
+		for (Asteroid a : mAsteroids) {
+			a.updateEntity(mDelta);
+			if (Math.sqrt(Math.abs(playerPosition.x - a.getPosition().x)
+					+ Math.abs(playerPosition.y - a.getPosition().y)) < 8) {
 				if (!a.destroyAnimationRunning() && !a.destroyAnimationDone()) {
 					a.destroy();
-					gamePlayer.setHitpoints(gamePlayer.getHitpoints() - 10);
+					mPlayer.setHitpoints(mPlayer.getHitpoints() - 10);
 				}
 			}
 
 		}
 	}
+
 	private void testPowerUpCollision() {
-		Point playerPosition = gamePlayer.getPosition();
-		for (int i = 0; i < gamePowerUps.size(); i++) {
-			PowerUp p = gamePowerUps.get(i);
-			p.updateEntity(gameDelta);
+		Point playerPosition = mPlayer.getPosition();
+		for (int i = 0; i < mPowerups.size(); i++) {
+			PowerUp p = mPowerups.get(i);
+			p.updateEntity(mDelta);
 			if (p.doesHit(playerPosition)) {
-				int powerupEffect  = p.getPowerUpEffect();
+				int powerupEffect = p.getPowerUpEffect();
 				if (powerupEffect == PowerUp.BOOST_FASTER) {
-					if(gameDelta < 5) {
-						gameDelta += 0.5;
+					if (mDelta < 5) {
+						mDelta += 0.5;
 					}
-				}
-				else if (powerupEffect == PowerUp.BOOST_SLOWER) {
-					if(gameDelta > 0.5) {
-						gameDelta -= 0.5;
+				} else if (powerupEffect == PowerUp.BOOST_SLOWER) {
+					if (mDelta > 0.5) {
+						mDelta -= 0.5;
 					}
+				} else if (powerupEffect == PowerUp.DOUBLE_SHOT) {
+					if (!(mPlayerProjectileAmount > 2))
+						mPlayerProjectileAmount = 2;
+					mProjectileSource += 50;
+				} else if (powerupEffect == PowerUp.TRIPLE_SHOT) {
+					if (!(mPlayerProjectileAmount > 3))
+						mPlayerProjectileAmount = 3;
+					mProjectileSource += 50;
+				} else if (powerupEffect == PowerUp.QUADRO_SHOT) {
+					mPlayerProjectileAmount = 4;
+					mProjectileSource += 50;
+				} else if (powerupEffect == PowerUp.HEALTH_RESTORE) {
+					mPlayer.setHitpoints(mPlayer.getMaxHitpoints());
 				}
-				else if (powerupEffect == PowerUp.DOUBLE_SHOT) {
-					if (! (_playerProjectileSpawnAmount > 2)) _playerProjectileSpawnAmount = 2;
-					_projectileSourceCounter += 50;
-				}
-				else if (powerupEffect == PowerUp.TRIPLE_SHOT) {
-					if (! (_playerProjectileSpawnAmount > 3)) _playerProjectileSpawnAmount = 3;
-					_projectileSourceCounter += 50;
-				}
-				else if (powerupEffect == PowerUp.QUADRO_SHOT) {
-					_playerProjectileSpawnAmount = 4;
-					_projectileSourceCounter += 50;
-				}
-				else if (powerupEffect == PowerUp.HEALTH_RESTORE) {
-					gamePlayer.setHitpoints(gamePlayer.getMaximumHitpoints());
-				}
-				gamePowerUps.remove(i);
+				mPowerups.remove(i);
 			}
 		}
 	}
+
 	private void cleanUp() {
-		if (System.currentTimeMillis() - _cleanUpEntitiesTimer > 30) {
-			for (int a = 0; a < gameAsteroids.size(); a++) {
-				if (gameAsteroids.get(a).getPosition().y < 0 || gameAsteroids.get(a).getPosition().y > 512 || gameAsteroids.get(a).destroyAnimationDone()) {
-					gameAsteroids.remove(a);
+		if (System.currentTimeMillis() - mCleanupTimer > 30) {
+			for (int a = 0; a < mAsteroids.size(); a++) {
+				if (mAsteroids.get(a).getPosition().y < 0 || mAsteroids.get(a).getPosition().y > 512
+						|| mAsteroids.get(a).destroyAnimationDone()) {
+					mAsteroids.remove(a);
 				}
 			}
-			for (int e = 0; e < gameEnemies.size(); e++) {
-				if (gameEnemies.get(e).getPosition().y < 0 || gameEnemies.get(e).getPosition().y > 512 || gameEnemies.get(e).destroyAnimationDone()) {
-					gameEnemies.remove(e);
+			for (int e = 0; e < mEnemies.size(); e++) {
+				if (mEnemies.get(e).getPosition().y < 0 || mEnemies.get(e).getPosition().y > 512
+						|| mEnemies.get(e).destroyAnimationDone()) {
+					mEnemies.remove(e);
 				}
 			}
-			for (int q = 0; q < gamePowerUps.size(); q++) {
-				if (gamePowerUps.get(q).getPosition().y < 0 || gamePowerUps.get(q).getPosition().y > 512 || gamePowerUps.get(q).destroyAnimationDone()) {
-					gamePowerUps.remove(q);
+			for (int q = 0; q < mPowerups.size(); q++) {
+				if (mPowerups.get(q).getPosition().y < 0 || mPowerups.get(q).getPosition().y > 512
+						|| mPowerups.get(q).destroyAnimationDone()) {
+					mPowerups.remove(q);
 				}
 			}
-			_cleanUpEntitiesTimer = System.currentTimeMillis();
+			mCleanupTimer = System.currentTimeMillis();
 		}
 	}
+
 	private void testEnemyCollision() {
-		Point playerPosition = gamePlayer.getPosition();
-		for (int ec = 0; ec < gameEnemies.size(); ec++) {
-			gameEnemies.get(ec).updateEntity(gameDelta);
+		Point playerPosition = mPlayer.getPosition();
+		for (int ec = 0; ec < mEnemies.size(); ec++) {
+			mEnemies.get(ec).updateEntity(mDelta);
 
-			if (Math.sqrt(Math.abs(playerPosition.x - gameEnemies.get(ec).getPosition().x) + Math.abs(playerPosition.y - gameEnemies.get(ec).getPosition().y)) < 16) {
-				gameEnemies.get(ec).shot(gameDelta);
+			if (Math.sqrt(Math.abs(playerPosition.x - mEnemies.get(ec).getPosition().x)
+					+ Math.abs(playerPosition.y - mEnemies.get(ec).getPosition().y)) < 16) {
+				mEnemies.get(ec).shot(mDelta);
 			}
-			if (Math.sqrt(Math.abs(playerPosition.x - gameEnemies.get(ec).getPosition().x) + Math.abs(playerPosition.y - gameEnemies.get(ec).getPosition().y)) < 8) {
+			if (Math.sqrt(Math.abs(playerPosition.x - mEnemies.get(ec).getPosition().x)
+					+ Math.abs(playerPosition.y - mEnemies.get(ec).getPosition().y)) < 8) {
 
-				if (!gameEnemies.get(ec).destroyAnimationRunning()){
-					gamePlayer.setHitpoints(gamePlayer.getHitpoints() - 5);
+				if (!mEnemies.get(ec).destroyAnimationRunning()) {
+					mPlayer.setHitpoints(mPlayer.getHitpoints() - 5);
 
 				}
-				gameEnemies.get(ec).destroy();
+				mEnemies.get(ec).destroy();
 
-			};
+			}
+			;
 
-			List<EnemyProjectile> enemyProjectiles = gameEnemies.get(ec).getProjectiles();
+			List<EnemyProjectile> enemyProjectiles = mEnemies.get(ec).getProjectiles();
 			for (int i = 0; i < enemyProjectiles.size(); i++) {
-				EnemyProjectile p  = enemyProjectiles.get(i);
+				EnemyProjectile p = enemyProjectiles.get(i);
 				if (p.getPosition().y < 0 || p.getPosition().y > 512) {
 					enemyProjectiles.remove(i);
-				}
-				else {
-					if (gamePlayer.doesHit(p.getPosition())) {
-						gamePlayer.setHitpoints(gamePlayer.getHitpoints() - 2);
+				} else {
+					if (mPlayer.doesHit(p.getPosition())) {
+						mPlayer.setHitpoints(mPlayer.getHitpoints() - 2);
 						enemyProjectiles.remove(i);
 					}
-					for (Asteroid a : gameAsteroids) {
+					for (Asteroid a : mAsteroids) {
 						if (a.doesHit(p.getPosition())) {
 							if (a.getHitpoints() > 0) {
 								a.setHitpoints(a.getHitpoints() - 1);
-							}
-							else {
+							} else {
 								a.destroy();
 							}
 						}
@@ -413,45 +435,49 @@ public class SingleplayerGameState implements GameState {
 			}
 		}
 	}
-	private void updateTemporaryBoost() {
-		if (_temporaryBoostActive && System.currentTimeMillis() - _temporaryBoostTimer > BOOST_UPDATE_TIME) {
-			if (System.currentTimeMillis() - _temporaryBoostStartTime < BOOST_DURATION_TIME) {
-				gameDelta = _temporaryOriginalDelta + _temporaryDeltaOffset * ((_temporaryBoostStartTime + BOOST_DURATION_TIME - System.currentTimeMillis()) / (double) BOOST_DURATION_TIME);
-				System.out.println(gameDelta);
-			}
-			else {
-				gameDelta = _temporaryOriginalDelta;
-				_temporaryBoostActive = false;
-			}
-			_temporaryBoostTimer = System.currentTimeMillis();
-		}
-	}
-	private void cancelGame() {
-		gamePlayer.setInvincible(false);
-		gamePlayer.setHitpoints(0);
-		try {
-			Game.dataStorage.set(0, new Integer(gameScore));
-		}
-		catch (Exception e) {
-			Game.dataStorage.add(new Integer(gameScore));
-		}
-		_slowdownCounter--;
-		gameDelta = ((double) _slowdownCounter) / 500;
 
-		_darkOverlayAlpha = (int) ((500 - (double) _slowdownCounter) / 500 * 255d);
-		if (_slowdownCounter <= 0) {
-			Game.stateManager.loadState(2);
+	private void updateTemporaryBoost() {
+		if (mBoost && System.currentTimeMillis() - mBoostTimer > BOOST_UPDATE_TIME) {
+			if (System.currentTimeMillis() - mBoostStart < BOOST_DURATION_TIME) {
+				mDelta = mBoostDeltaOriginal
+						+ mBoostDeltaOffset * ((mBoostStart + BOOST_DURATION_TIME - System.currentTimeMillis())
+								/ (double) BOOST_DURATION_TIME);
+				System.out.println(mDelta);
+			} else {
+				mDelta = mBoostDeltaOriginal;
+				mBoost = false;
+			}
+			mBoostTimer = System.currentTimeMillis();
 		}
-		System.out.println(_slowdownCounter);
 	}
+
+	private void cancelGame() {
+		mPlayer.setInvincible(false);
+		mPlayer.setHitpoints(0);
+		try {
+			Game.dataStorage.set(0, new Integer(mScore));
+		} catch (Exception e) {
+			Game.dataStorage.add(new Integer(mScore));
+		}
+		mSlowdownCounter--;
+		mDelta = ((double) mSlowdownCounter) / 500;
+
+		mOverlayAlpha = (int) ((500 - (double) mSlowdownCounter) / 500 * 255d);
+		if (mSlowdownCounter <= 0) {
+			Game.getStates().load(2);
+		}
+		System.out.println(mSlowdownCounter);
+	}
+
 	private void temporaryBoost(int v) {
-		if (!_temporaryBoostActive) {
-			_temporaryBoostActive = true;
-			_temporaryOriginalDelta = gameDelta;
-			_temporaryBoostStartTime = System.currentTimeMillis();
-			_temporaryDeltaOffset = v;
+		if (!mBoost) {
+			mBoost = true;
+			mBoostDeltaOriginal = mDelta;
+			mBoostStart = System.currentTimeMillis();
+			mBoostDeltaOffset = v;
 		}
 	}
+
 	@Override
 	public void update() {
 		// HIGHSCORE
@@ -479,7 +505,7 @@ public class SingleplayerGameState implements GameState {
 		// TEMPORÄREN BOOST UPDATEN
 		updateTemporaryBoost();
 		// BEI GAMEOVER HERUNTERFAHREN
-		if (gamePlayer.getHitpoints() <= 0) {
+		if (mPlayer.getHitpoints() <= 0) {
 			cancelGame();
 		}
 	}
@@ -488,13 +514,13 @@ public class SingleplayerGameState implements GameState {
 	public void keyDown(String msg) {
 		switch (msg) {
 		case "left":
-			_leftButtonPressed = true;
+			mLeftKeyState = true;
 			break;
 		case "right":
-			_rightButtonPressed = true;
+			mRightKeyState = true;
 			break;
 		case "space":
-			_spaceButtonPressed = true;
+			mSpaceKeyState = true;
 			break;
 		case "up":
 			temporaryBoost(3);
@@ -503,49 +529,50 @@ public class SingleplayerGameState implements GameState {
 			temporaryBoost(-2);
 			break;
 		case "q":
-			gamePlayer.setInvincible(!gamePlayer.getInvincible());
+			mPlayer.setInvincible(!mPlayer.getInvincible());
 			break;
 		case "w":
 			PowerUp p = new PowerUp();
-			p.setPosition(new Point(randomValueGenerator.nextInt(256), 0));
-			gamePowerUps.add(p);
+			p.setPosition(new Point(mRng.nextInt(256), 0));
+			mPowerups.add(p);
 			break;
 		case "e":
 			SmallOrbiter o = new SmallOrbiter();
-			o.setPosition(new Point(randomValueGenerator.nextInt(256), 0));
-			gameEnemies.add(o);
+			o.setPosition(new Point(mRng.nextInt(256), 0));
+			mEnemies.add(o);
 			break;
 		case "p":
 			Pulsar pulsar = new Pulsar();
-			pulsar.setPosition(new Point(randomValueGenerator.nextInt(224) + 16, 0));
-			gameEnemies.add(pulsar);
+			pulsar.setPosition(new Point(mRng.nextInt(224) + 16, 0));
+			mEnemies.add(pulsar);
 			System.out.println("pulsar added");
 			break;
 		case "1":
-			_playerProjectileSpawnAmount = 1;
+			mPlayerProjectileAmount = 1;
 			break;
 		case "2":
-			_playerProjectileSpawnAmount = 2;
+			mPlayerProjectileAmount = 2;
 			break;
 		case "3":
-			_playerProjectileSpawnAmount = 3;
+			mPlayerProjectileAmount = 3;
 			break;
 		case "4":
-			_playerProjectileSpawnAmount = 4;
+			mPlayerProjectileAmount = 4;
 			break;
 		}
 	}
+
 	@Override
 	public void keyUp(String msg) {
 		switch (msg) {
 		case "left":
-			_leftButtonPressed = false;
+			mLeftKeyState = false;
 			break;
 		case "right":
-			_rightButtonPressed = false;
+			mRightKeyState = false;
 			break;
 		case "space":
-			_spaceButtonPressed = false;
+			mSpaceKeyState = false;
 			break;
 		}
 	}
